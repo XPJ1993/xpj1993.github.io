@@ -13,7 +13,8 @@ image: /img/hello_world.jpeg
 2. 在改项目中创建一个Android Module，然后更改对应library的build.gradle文件，修改后内容如下
 ![](https://raw.githubusercontent.com/Pjex/images/master/20210622164741.png)
 3. 然后就是集成最基本的在对应的src文件夹下创建一个kotlin文件写对应的实现，这里集成最基本的plugin类，具体实现如下
-```kotlin
+
+```java
 package com.xpj.firstgradlelibrary
 
 import com.android.build.gradle.AppExtension
@@ -57,6 +58,7 @@ class XPJFirstPlugin : Plugin<Project> {
     }
 }
 ```
+
 4. 这里写好之后在对应的build.gradle下面执行我们的上传task这时候如果成功就会在本地或者maven生成对应的包，包含maven的形式，例如pom文件xml文件啥的
 5. 在app工程里面引用，首先在project下面增加对应的引用和依赖
 ![](https://raw.githubusercontent.com/Pjex/images/master/20210622164819.png)
