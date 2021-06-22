@@ -1,6 +1,7 @@
 ---
 layout: post
 title: android自定义gradle 1
+tags: [gradle学习]
 image: /img/hello_world.jpeg
 ---
 
