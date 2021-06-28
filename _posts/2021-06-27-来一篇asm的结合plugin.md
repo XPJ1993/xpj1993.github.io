@@ -1,7 +1,9 @@
 ---
 layout: post
 title: 来一篇ASM结合Plugin的
+subtitle: 这个是初级的ASM，未完待续。。。
 image: /img/lifedoc/jijiji.jpg
+tags: [gradle学习]
 ---
 
 ### asm插桩
