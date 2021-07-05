@@ -28,3 +28,20 @@ mv.visitVarInsn(Opcodes.LSTORE, index) // 将上一个返回的值保存到这�
 
 下一步就是在职复习，下一步准备找不写UI的Android工作，例如虚拟化、音视频相关、架构相关、小程序容器等，目前的计划是明年三四月份之后跑路，希望在此之前不要被裁掉吧，不然可能没有足够的时间去复习了，如果在此之前没有裁掉我，那么我休陪产假的时间可以好好学习学习，看看这老二是不是我的福星了。
 
+### 0705 学习APT
+
+粗略看了别人写的APT文章，真不错，主要涉及了反射去获取生成的文件，通过对应的注解做功能增强等等。下面是从编译阶段拿到对应所有需要代理生成view的方式，摘抄自人家的评论。
+
+```java
+之前有位老哥给我提了个问题：通过 Android 插件获取所有 Xml 布局中控件 View 的思路？
+这是个好问题啊，不知为啥又把评论给删除了😂 ，不懂就问挺好的，这里我做一下回答：
+一、首先我们要对 Android 打包编译流程有一定的了解，其中 mergeDebugResources 这个 task 会对所有的 Xml 进行合并，并输出到：
+1、如果是 debug 包：
+/build/intermediates/incremental/mergeDebugResources/merger.xml 这个文件下
+2、如果是 release 包：
+/build/intermediates/incremental/mergeReleaseResources/merger.xml 这个文件下
+二、自定义插件，将自己编写的 task 挂载到 mergeDebugResources 后面，然后遍历 merger.xml 这个文件就可以拿到所有的控件了
+```
+
+APT整体来说就是使用注解和对应的annotation处理器去解析对应的注解然后生成自己的辅助类等等，例如butterknife，room，retrofit等等几乎都用了APT去进行功能增强，我要学习的hilt也是基于注解进行的功能增强，注解真的是一个利器呀。
+
