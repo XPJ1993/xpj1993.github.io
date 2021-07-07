@@ -57,3 +57,8 @@ APT整体来说就是使用注解和对应的annotation处理器去解析对应�
 
 设计SDK或者任何模块都要遵循设计原则，主要是单一职责，迪米特最少知道原则，内部则应该符合依赖倒置，面向接口编程，以及接口隔离，开闭原则等，里斯替换原则子可以替爹，爹不可替换子，子都是有扩展的。
 
+学习了在解析view的时候attachToRoot的区别以及使用场景，实际上最大的区别是添加到父布局的时机不同而已，若为true则立刻添加到父布局，反之则是需要自己添加到父布局，特别的，在fragment的onCreateView中，不能设置为true，否则会抛出illegleState异常，这是因为fragment外面应add到parent中了，再次添加会导致一个view重复添加，
+
+https://stackoverflow.com/questions/12567578/what-does-the-layoutinflater-attachtoroot-parameter-mean
+
+
