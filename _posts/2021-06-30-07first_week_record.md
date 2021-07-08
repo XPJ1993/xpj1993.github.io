@@ -61,4 +61,7 @@ APT整体来说就是使用注解和对应的annotation处理器去解析对应�
 
 https://stackoverflow.com/questions/12567578/what-does-the-layoutinflater-attachtoroot-parameter-mean
 
+**广告SDK使用的Kotlin技术**
+使用kotlin的DSL特性去实现广告参数的builder功能
+使用inline apply方式完成ADResult取对应数据的功能
 
