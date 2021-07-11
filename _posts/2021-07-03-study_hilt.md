@@ -26,3 +26,49 @@ Java语言中的类、方法、变量、参数和包等都可以被标注。和J
 ```
 
 习惯了注解，突然不知道dagger是怎么做的依赖倒置了，应该是接口，因为动态代理需要依赖接口去实现对应的东西，用注解的谷歌还是聪明啊，下次框架类的东西的优先考虑注解的使用。
+
+
+###  0711 接入hilt
+
+今天接入了hilt的使用，目前就是最简单的使用方式，使用几个最基本的注解去做到依赖注入的，首先就是增加了一个app作为整个app的入口点，然后在目标activity里面增加对应的入口点，这里都是增加注解的方式，例如
+```kotlin
+@AndroidEntryPoint // activity的注入点
+@Inject // 注入的目标
+@HiltAndroidApp // app注入的入口点
+// 测试类，这里参数也可以注入进来，只需要在构造器前面加上注解，这里需要注意即使没有参数也要加上空的构造器方便注解声明
+class GrowthTest @Inject constructor(private val inner: GrowthTestInner) 
+```
+实际上hilt的核心思想就是通过注解以及apt这里他们用的是kapt生成对应的辅助类，用到的时候使用factory模式去create给目标使用，这里截图一下，看看都有哪些东西
+
+![](https://raw.githubusercontent.com/Pjex/images/master/20210711175235.png)
+
+妈的，本来还准备深究一下hilt的核心原来，他是什么实际注解进来的，他是怎么做到懒加载的，只是看遍了代码也没有发现啊，只发现了中间产物，不明所以啊，这个不理解dagger就很难知道这玩意了，因为很多直接进去发现都是dagger internal下面的代码。
+
+![](https://raw.githubusercontent.com/Pjex/images/master/20210711180718.png)
+
+看一个最简单的test的生成代码：
+```kotlin
+public final class GrowthTest_Factory implements Factory<GrowthTest> {
+  private final Provider<GrowthTestInner> innerProvider;
+
+  public GrowthTest_Factory(Provider<GrowthTestInner> innerProvider) {
+    this.innerProvider = innerProvider;
+  }
+
+  @Override
+  public GrowthTest get() {// 这里可以进到dagger internal里面
+    return newInstance(innerProvider.get());
+  }
+
+  // 这里的方法都不知道啥时候调用的没有追到啊
+  public static GrowthTest_Factory create(Provider<GrowthTestInner> innerProvider) {
+    return new GrowthTest_Factory(innerProvider);
+  }
+  // 这里的也是这个应该是每一个都生成的一个外部的类。
+  public static GrowthTest newInstance(GrowthTestInner inner) {
+    return new GrowthTest(inner);
+  }
+}
+```
+
+时候追究如何生成的代码，然后他的调用时机是哪个。
