@@ -72,3 +72,124 @@ public final class GrowthTest_Factory implements Factory<GrowthTest> {
 ```
 
 时候追究如何生成的代码，然后他的调用时机是哪个。
+
+### 0712 探究hilt代码
+
+hilt的原理在生成的类中，可以窥见一斑。他们的各种注解是根据依赖树的，为什么App必须要注解，是因为这个是应用的源头啊，hilt会根据对应的注解去构建一个图或者依赖，具体是有向无环图，还是别的，都在app哪里得到了调度。
+
+**GrowthApp_HiltComponents 类分析：**
+
+```kotlin
+// 这里是app生成的hilt类，可以看到这个ActivityC实现了MainActivity_GeneratedInjector与SecondActivity_GeneratedInjector而这俩是我们对应Activity有hilt注解生成的接口类
+@ActivityScoped
+  public abstract static class ActivityC implements MainActivity_GeneratedInjector,
+      SecondActivity_GeneratedInjector,
+      ActivityComponent,
+      DefaultViewModelFactories.ActivityEntryPoint,
+      FragmentComponentManager.FragmentComponentBuilderEntryPoint,
+      ViewComponentManager.ViewComponentBuilderEntryPoint,
+      GeneratedComponent {
+    @Subcomponent.Builder
+    abstract interface Builder extends ActivityComponentBuilder {
+    }
+  }
+```
+
+同样地，在这个类中 **DaggerGrowthApp_HiltComponents_ApplicationC** 实现了ActivityC对应的接口，具体如下，
+
+```kotlin
+private final class ActivityCImpl extends GrowthApp_HiltComponents.ActivityC {
+  // 下面的代码就是具体注入的代码，最终会调用到对应的生成Activity类中
+      @Override
+      public void injectMainActivity(MainActivity mainActivity) {
+        injectMainActivity2(mainActivity);
+      }
+
+      @Override
+      public void injectSecondActivity(SecondActivity secondActivity) {
+        injectSecondActivity2(secondActivity);
+      }
+
+// 这里最终调用到为Activity生成的MembersInjector中
+  private MainActivity injectMainActivity2(MainActivity instance) {
+        MainActivity_MembersInjector.injectImnottest2(instance, new GrowthTest2());
+        MainActivity_MembersInjector.injectImfuckingnottest(instance, getGrowthTest());
+        return instance;
+      }
+}
+```
+
+**MainActivity_MembersInjector** 中生成的模板代码，这里被上述ActivityCImpl调用，这里达到注入的效果，那么上述Impl类会在哪里被调用呢，
+
+```kotlin
+@InjectedFieldSignature("com.xpj.mygrowthpath.MainActivity.imnottest2")
+  public static void injectImnottest2(MainActivity instance, GrowthTest2 imnottest2) {
+    instance.imnottest2 = imnottest2;
+  }
+```
+
+Impl被调用的地方在此,这个类同样在 **DaggerGrowthApp_HiltComponents_ApplicationC** 生成
+
+```kotlin
+private final class ActivityCBuilder implements GrowthApp_HiltComponents.ActivityC.Builder {
+      private Activity activity;
+
+      @Override
+      public ActivityCBuilder activity(Activity arg0) {
+        this.activity = Preconditions.checkNotNull(arg0);
+        return this;
+      }
+
+      @Override
+      public GrowthApp_HiltComponents.ActivityC build() {
+        Preconditions.checkBuilderRequirement(activity, Activity.class);
+        return new ActivityCImpl(activity);
+      }
+    }
+```
+
+他的调用在一个类ApplicationC中生成，实现了对应的父类接口 **ActivityComponentBuilder**
+```kotlin
+@Override
+    public ActivityComponentBuilder activityComponentBuilder() {
+      return new ActivityCBuilder();
+    }
+```
+
+最终调用方是 **ActivityComponentManager** 这个类，这个实现或者继承了了 **GeneratedComponentManager**  
+
+```kotlin
+protected Object createComponent() {
+    if (!(activity.getApplication() instanceof GeneratedComponentManager)) {
+      if (Application.class.equals(activity.getApplication().getClass())) {
+        throw new IllegalStateException(
+            "Hilt Activity must be attached to an @HiltAndroidApp Application. "
+                + "Did you forget to specify your Application's class name in your manifest's "
+                + "<application />'s android:name attribute?");
+      }
+      throw new IllegalStateException(
+          "Hilt Activity must be attached to an @AndroidEntryPoint Application. Found: "
+              + activity.getApplication().getClass());
+    }
+
+    return ((ActivityComponentBuilderEntryPoint)
+            activityRetainedComponentManager.generatedComponent())
+        .activityComponentBuilder()
+        .activity(activity)
+        .build(); // 这里最终调用创建ActivityCImpl的地方。
+  }
+```
+
+最终调用到哪里呢，是这个 **Hilt_MainActivity** 生成的对应类，这个类最终在哪里调用目前还木有发现。。但是他调用的是在onCreate里调用了inject方法。
+
+```kotlin
+// 这里最终是调用到了上面ActivityCImpl里，
+protected void inject() {
+    ((MainActivity_GeneratedInjector) generatedComponent()).injectMainActivity(UnsafeCasts.<MainActivity>unsafeCast(this));
+  }
+```
+
+**总结**
+Hilt在编译期改写Activity或者Fragment的父类，获取了自定义的ViewModel.Factory的方法，从而hook了ViewModle的创建过程，对ViewModel进行注入。整个实现过程借助@InstallIn以及@AndroidEntryPoint的注解，本身就是一个Hilt的最佳实践，值得学习和借鉴
+
+
