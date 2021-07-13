@@ -193,3 +193,8 @@ protected void inject() {
 Hilt在编译期改写Activity或者Fragment的父类，获取了自定义的ViewModel.Factory的方法，从而hook了ViewModle的创建过程，对ViewModel进行注入。整个实现过程借助@InstallIn以及@AndroidEntryPoint的注解，本身就是一个Hilt的最佳实践，值得学习和借鉴
 
 
+![](https://raw.githubusercontent.com/Pjex/images/master/20210713145316.png)
+
+补充反编译：
+https://www.jianshu.com/p/3a305f32c4a3
+
