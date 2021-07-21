@@ -375,6 +375,12 @@ org.gradle.workers.WorkerExecutionException: There was a failure while executing
 
 当我们写入的东西不符合标准的时候，就会被Java虚拟机的校验拒之门外，这时候就要考虑是我们对应的插桩方法哪里出问题了，就像我们之前的对应store和load位置有问题了。
 
+[使用ASM完成编译时插桩](https://chsmy.github.io/2019/09/28/architecture/%E4%BD%BF%E7%94%A8ASM%E5%AE%8C%E6%88%90%E7%BC%96%E8%AF%91%E6%97%B6%E6%8F%92%E6%A1%A9/)
+
+[強大！ASM 插樁實現 Android 端無埋點性能監控](https://www.gushiciku.cn/pl/gz8d/zh-hk)
+
+[Android函数插桩](https://www.jianshu.com/p/16ed4d233fd1)
+
 ### 总结
 
 经过本次简单用法，总结了几种需要注意的地方。
