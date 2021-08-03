@@ -137,3 +137,11 @@ override fun visitMethodInsn(
 4. 还遇到一个问题是，即使使用了固定高度还是会有重排序，问题的根源是我在使用recyclerview的时候增加和结束动画的时候用的 **notifyDataChange** 去通知的数据有改变，这时候就会导致数据会多刷新，解决方式是使用 **notifyDataInsert**（增加动画时）和 **notifyDataRemoved**（移除动画时），这时候就不会有频繁的刷新回调了，保持了高度数据也保证了瀑布流不重排。
 5. 上述问题也说明了自己使用不当导致的问题，这个还需要去研究和学习recyclerview的，这个还有一个来自recyclerview的 **diffutil** 还是值得学习和研究的。有了listview为啥还要有recyclerview呢，这个就是需要着重看到recyclerview的核心本质和优势在哪里。
 
+
+### 0803 工作中学习记录
+
+1. 使用recyclerview的addItemDecroration的时候需要判断是否已经存在了，因为它支持多个如果不判断会发生同一个itemDecoration被重复添加体现到UI上就是间距越来越大。
+2. 使用merge标签的时候必须要把这个view attachRoot设置为true，因为它本身不依赖任何已经有的布局，另外使用merge内外布局必须一样，否则也会有问题，而recyclerview等一系列要求不能attachRoot为true所以使用merge的布局不能使用在对应的recyclerview中。
+3. attachRoot 是否为 true的意思是是否立刻添加子view到父viewgroup中，因为recyclerview存在复用以及动态添加移除view所以这个要自己去管理，addView和removeView。
+4. 又体现了架构的好处，我的首页因为有processor和transfer这些角色，因此适配另一个接口回很快，直接创建新的processor即可，并且，我的使用也是依赖注入的思想，processor是外部传入的，具体调用者无感知就完成了替换。
+
