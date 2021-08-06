@@ -145,3 +145,7 @@ override fun visitMethodInsn(
 3. attachRoot 是否为 true的意思是是否立刻添加子view到父viewgroup中，因为recyclerview存在复用以及动态添加移除view所以这个要自己去管理，addView和removeView。
 4. 又体现了架构的好处，我的首页因为有processor和transfer这些角色，因此适配另一个接口回很快，直接创建新的processor即可，并且，我的使用也是依赖注入的思想，processor是外部传入的，具体调用者无感知就完成了替换。
 
+
+### 0806 学习使用Charles断点
+
+使用Charles断点修改返回值功能，在对应的接口上右击选择break points然后再次请求这个接口的时候就能对request和response进行修改了，可以修改里面的内容达到调试目的，例如让某些数据异常缺失了，或者多于了啥的，看看端上的容错是否ok。
