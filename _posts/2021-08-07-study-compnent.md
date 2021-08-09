@@ -1,6 +1,6 @@
 ---
 layout: post
-title: First post!
+title: 组件化学习总结
 image: /img/lifedoc/jijiji.jpg
 tags: [标签]
 ---
