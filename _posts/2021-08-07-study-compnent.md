@@ -2,7 +2,7 @@
 layout: post
 title: 组件化学习总结
 image: /img/lifedoc/jijiji.jpg
-tags: [标签]
+tags: [组件化]
 ---
 
 ### 0807 组件化学习
