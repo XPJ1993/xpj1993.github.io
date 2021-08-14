@@ -149,3 +149,23 @@ override fun visitMethodInsn(
 ### 0806 学习使用Charles断点
 
 使用Charles断点修改返回值功能，在对应的接口上右击选择break points然后再次请求这个接口的时候就能对request和response进行修改了，可以修改里面的内容达到调试目的，例如让某些数据异常缺失了，或者多于了啥的，看看端上的容错是否ok。
+
+### 0814 反编译步骤
+
+```kotlin
+// 1. copy 文件到目标文件夹
+cp ~/code/github/MyGrowPath/app/build/outputs/apk/debug/app-debug.apk .
+
+// 2. 执行非smali方式的反编译
+./apktool d -s app-debug.apk
+
+// 3. copy 生成的文件到dex2jar
+mv app-debug dex2jar
+
+// 4. dex解析为对应的jar包，这里可能多个classes.dex文件，找到自己感兴趣的
+sh dex2jar/dex2jar-2.0/d2j-dex2jar.sh dex2jar/app-debug/classes.dex
+
+// 5. jd-gui查看生成的jar
+
+```
+
