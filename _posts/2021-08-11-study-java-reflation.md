@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 复习Java（一）
+title: 复习Java（二）
 subtitle: 反射与动态代理学习
 image: /img/lifedoc/jijiji.jpg
 tags: [Java]
