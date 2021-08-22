@@ -278,3 +278,168 @@ init 方式的构造方法会在主构造函数的最后执行，如果init 语�
 
 学到65页，未完待续。。。
 
+### 20210822 更新
+
+**延迟初始化：by lazy 和 lateinit**
+
+by lazy 和 lateinit 可以延迟初始化，其中
+
+by lazy 语法特点为：
+
+1. 改变量必须是引用不可变的，也就是使用 val 定义，不能使用 var 定义
+2. 在第一次被使用时才会进行赋值操作
+3. lazy 背后是接受一个 lambda 并返回一个 Lazy<T> 实例的函数，第一次访问该属性时，会执行 lazy 对应的 lambda 表达式并记录结果，后续访问该属性时只是返回记录的结果
+
+```kotlin
+// kotlin 代码
+    val sex: String by lazy { 
+        if (true) "male" else "female"
+    }
+
+// 翻译的Java代码
+this.sex$delegate = LazyKt.lazy((Function0)null.INSTANCE);
+
+// 这里返回的 Lazy<T> ，默认实现是 Synchronized 形式的实现
+public actual fun <T> lazy(initializer: () -> T): Lazy<T> = SynchronizedLazyImpl(initializer)
+
+// 同步方式实现原理
+private class SynchronizedLazyImpl<out T>(initializer: () -> T, lock: Any? = null) : Lazy<T>, Serializable {
+    private var initializer: (() -> T)? = initializer
+    @Volatile private var _value: Any? = UNINITIALIZED_VALUE
+    // final field is required to enable safe publication of constructed instance
+    private val lock = lock ?: this
+
+    override val value: T
+        get() {
+            val _v1 = _value
+            if (_v1 !== UNINITIALIZED_VALUE) {
+                @Suppress("UNCHECKED_CAST")
+                return _v1 as T
+            }
+
+            return synchronized(lock) {
+                val _v2 = _value
+                if (_v2 !== UNINITIALIZED_VALUE) {
+                    @Suppress("UNCHECKED_CAST") (_v2 as T)
+                } else {
+                    val typedValue = initializer!!()
+                    _value = typedValue
+                    initializer = null
+                    typedValue
+                }
+            }
+        }
+
+    override fun isInitialized(): Boolean = _value !== UNINITIALIZED_VALUE
+
+    override fun toString(): String = if (isInitialized()) value.toString() else "Lazy value not initialized yet."
+
+    private fun writeReplace(): Any = InitializedLazyImpl(value)
+}
+
+// 几种模式
+public final class LazyKt$WhenMappings {
+   // $FF: synthetic field
+   public static final int[] $EnumSwitchMapping$0 = new int[LazyThreadSafetyMode.values().length];
+
+   // 1 添加同步锁 2 Publication 参数不加锁 3 None 没有任何线程安全的保证
+   static {
+      $EnumSwitchMapping$0[LazyThreadSafetyMode.SYNCHRONIZED.ordinal()] = 1;
+      $EnumSwitchMapping$0[LazyThreadSafetyMode.PUBLICATION.ordinal()] = 2;
+      $EnumSwitchMapping$0[LazyThreadSafetyMode.NONE.ordinal()] = 3;
+   }
+}
+
+// Publication模式的实现
+private class SafePublicationLazyImpl<out T>(initializer: () -> T) : Lazy<T>, Serializable {
+    @Volatile private var initializer: (() -> T)? = initializer
+    @Volatile private var _value: Any? = UNINITIALIZED_VALUE
+    // this final field is required to enable safe initialization of the constructed instance
+    private val final: Any = UNINITIALIZED_VALUE
+
+    override val value: T
+        get() {
+            val value = _value
+            if (value !== UNINITIALIZED_VALUE) {
+                @Suppress("UNCHECKED_CAST")
+                return value as T
+            }
+
+            val initializerValue = initializer
+            // AtomicReferenceFieldUpdater 使用这个Field Updater 去保证，内部使用了 Updater cas 去比较这个值是否是未初始化的，如果是就更新，否则不动
+            // if we see null in initializer here, it means that the value is already set by another thread
+            if (initializerValue != null) {
+                val newValue = initializerValue()
+                if (valueUpdater.compareAndSet(this, UNINITIALIZED_VALUE, newValue)) {
+                    initializer = null
+                    return newValue
+                }
+            }
+            @Suppress("UNCHECKED_CAST")
+            return _value as T
+        }
+
+    override fun isInitialized(): Boolean = _value !== UNINITIALIZED_VALUE
+
+    override fun toString(): String = if (isInitialized()) value.toString() else "Lazy value not initialized yet."
+
+    private fun writeReplace(): Any = InitializedLazyImpl(value)
+
+    companion object {
+        private val valueUpdater = java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater(
+            SafePublicationLazyImpl::class.java,
+            Any::class.java,
+            "_value"
+        )
+    }
+}
+```
+
+**kotlin 关键字**
+
+```kotlin
+is -> instanceOf
+as -> Java 的强转
+
+和类型
+ A or B
+
+积类型
+ C and D
+```
+
+**协变 和 逆变**
+
+out 协变： 这个和Java 的 <? extends T> 语义相同，相当于都是继承于 T 的类型，是 T 的子类型
+in 逆变： 这个和 Java 的 <? super T> 语义相同，限定为是 T 的父类，但是 T 的子类也可以，因为 T 的子类明显是可以转变为 T 的
+
+PCES 原则，out 协变和 in 逆变同样支持 PCES 原则， Producer 生产者需要使用 协变的类型， Consumer 消费者需要使用逆变类型的泛型。
+
+**内联函数**
+
+使用 inline 定义内联函数，内联函数执行的时候会把代码编译到使用者内部，这样就可以少一层调用栈。
+例如：翻译一下with的定义
+
+```kotlin
+// with是内联，其中接收者为 T ，传入的是一个 block 方法，最后返回一个 R 的泛型
+inline fun <T, R> with(receiver: T, block: T.() ->  R): R
+
+// apply 方法定义，作用到 T 的 apply 方法，调用 T 的 block 方法，最终的返回值是 Unit ，整个 apply 执行之后还是返回 接收者本身
+inline fun <T> T.apply(block: T.() -> Unit): T
+
+// T.() 代表调用 T 身上的 lambda 方法
+```
+
+**注解定义**
+
+注解定义使用 annotatio class 定义注解。
+使用 kapt 结合 kotlin 注解可以实现基于元编程的二次编程，基于注解生成类，或者进行拦截定义特定的注解 实现各种功能。
+
+**响应式编程和流**
+
+Rx 某某某是响应式编程， 流的代表是kotlin的Flow以及Java的Stream，可以不用Rx 方式编程但是响应式编程明显是一个主流。响应式编程是一个思想，就是流驱动程序的运行，收到流或者数据之后进行处理，根据不同的数据做出不同的相应，或者就像我的首页数据解析流程，不同的类型进入不同的 transfer 这样可以最大的灵活性去追求变化。
+
+**函数式编程**
+
+函数式编程，kotlin 目前不支持纯种的函数式编程，scala 便是纯种的函数式语言，函数式编程的特点是更加数学化或者抽象化，不人类化。因此学习的时候有一定的门槛，主要是思想的转变。
+
