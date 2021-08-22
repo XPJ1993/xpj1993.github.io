@@ -443,3 +443,100 @@ Rx 某某某是响应式编程， 流的代表是kotlin的Flow以及Java的Strea
 
 函数式编程，kotlin 目前不支持纯种的函数式编程，scala 便是纯种的函数式语言，函数式编程的特点是更加数学化或者抽象化，不人类化。因此学习的时候有一定的门槛，主要是思想的转变。
 
+**数据类 与 密封类**
+
+数据类型用data class 声明，密封类则用 sealed class 声明，其中，data 类一般用于做bean 且他不可继承，sealed 类多用于 when 子句，使用密封类的 when 子句可以没有else 仅仅弄几个继承与 sealed 的类也可。sealed 类只能在一个文件中继承，脱离之后因为他的构造函数是private 的并不能正常继承。
+
+```kotlin
+// kotlin
+sealed class Xiaoming {
+    abstract fun foo()
+}
+
+data class Xiaomingzizi(val tt: Int) : Xiaoming() {
+    override fun foo() {
+
+    }
+
+}
+
+// Java 
+// data类默认为final 定义的class 因此不能继承
+public final class Xiaomingzizi extends Xiaoming {
+   private final int tt;
+
+   public void foo() {
+   }
+
+   public final int getTt() {
+      return this.tt;
+   }
+
+   // 这里是调用的有DefaultConstructorMarker的构造方法，因此这里可以继承，外部默认调用的是private 那个因此有问题，使用 sealed 需在一个kt 文件中定义
+   public Xiaomingzizi(int tt) {
+      super((DefaultConstructorMarker)null);
+      this.tt = tt;
+   }
+
+   public final int component1() {
+      return this.tt;
+   }
+
+   @NotNull
+   public final Xiaomingzizi copy(int tt) {
+      return new Xiaomingzizi(tt);
+   }
+
+   // $FF: synthetic method
+   public static Xiaomingzizi copy$default(Xiaomingzizi var0, int var1, int var2, Object var3) {
+      if ((var2 & 1) != 0) {
+         var1 = var0.tt;
+      }
+
+      return var0.copy(var1);
+   }
+
+   @NotNull
+   public String toString() {
+      return "Xiaomingzizi(tt=" + this.tt + ")";
+   }
+
+   public int hashCode() {
+      return this.tt;
+   }
+
+   public boolean equals(@Nullable Object var1) {
+      if (this != var1) {
+         if (var1 instanceof Xiaomingzizi) {
+            Xiaomingzizi var2 = (Xiaomingzizi)var1;
+            if (this.tt == var2.tt) {
+               return true;
+            }
+         }
+
+         return false;
+      } else {
+         return true;
+      }
+   }
+}
+// Xiaoming.java
+package com.xpj.kotlingrowth;
+
+import kotlin.Metadata;
+import kotlin.jvm.internal.DefaultConstructorMarker;
+// 默认是 abstract 类定义
+public abstract class Xiaoming {
+   public abstract void foo();
+
+   // 这个密封类的构造函数为private
+   private Xiaoming() {
+   }
+
+   // $FF: synthetic method
+   public Xiaoming(DefaultConstructorMarker $constructor_marker) {
+      this();
+   }
+}
+```
+
