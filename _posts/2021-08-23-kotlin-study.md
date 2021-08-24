@@ -6,6 +6,16 @@ image: /img/lifedoc/jijiji.jpg
 tags: [Kotlin]
 ---
 
+### 协程常用词
+
+![](https://raw.githubusercontent.com/XPJ1993/images/master/20210824200923.png)
+
+![](https://raw.githubusercontent.com/XPJ1993/images/master/20210824201000.png)
+
+### 协程特性
+
+![](https://raw.githubusercontent.com/XPJ1993/images/master/20210824200804.png)
+
 ```kotlin
 
 // 几个作用域中的问题
