@@ -8,6 +8,8 @@ tags: [Kotlin]
 
 开个坑，学习 kotlin 的 flow。
 
+test
+
 ### flow 脑图
 
 ![](https://raw.githubusercontent.com/XPJ1993/images/master/20210828174303.png)
