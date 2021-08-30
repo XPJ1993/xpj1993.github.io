@@ -169,3 +169,14 @@ sh dex2jar/dex2jar-2.0/d2j-dex2jar.sh dex2jar/app-debug/classes.dex
 
 ```
 
+### 使用扩展函数添加 dialog
+
+```kotlin
+// 如果是继承于 FragmentActivity 可以这样写，如果是 Activity 则需要用 dialog。
+fun FragmentActivity.showDia() = run {
+        val dia = KSCoroutinesFrag()
+        supportFragmentManager.beginTransaction().add(android.R.id.content, dia)
+            .commitAllowingStateLoss()
+    }
+```
+

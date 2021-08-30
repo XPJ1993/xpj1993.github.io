@@ -9,7 +9,8 @@ tags: [Kotlin]
 
 ### 脑图
 
-![](https://raw.githubusercontent.com/XPJ1993/images/master/20210829161538.png)
+![](https://raw.githubusercontent.com/XPJ1993/images/master/202108291615
+¸38.png)
 
 ### 总结
 
