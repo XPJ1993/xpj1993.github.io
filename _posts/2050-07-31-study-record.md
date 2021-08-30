@@ -175,8 +175,64 @@ sh dex2jar/dex2jar-2.0/d2j-dex2jar.sh dex2jar/app-debug/classes.dex
 // 如果是继承于 FragmentActivity 可以这样写，如果是 Activity 则需要用 dialog。
 fun FragmentActivity.showDia() = run {
         val dia = KSCoroutinesFrag()
+        // 注意这里的 android.R 因为资源是 android 的，这样才能正常使用
         supportFragmentManager.beginTransaction().add(android.R.id.content, dia)
             .commitAllowingStateLoss()
     }
 ```
 
+### 优化在 IO 中解析
+
+解析绘本首页数据时候，用协程在 IO 线程中解析，发现使用 flow 方式可以，使用协程直接解析和使用 async 都会有异常，目前没有研究具体原因是啥， flow 可以就可以吹逼一下子了。
+
+```kotlin
+
+// todo 可以验证这里消耗了多少时间，这样改造之后，就不会在主线程阻塞解析数据了，唉，不得不感叹我原来的
+        //  框架可太好用了，这里随随便便添加协程和流相关滴，这里可以用协程 async 做，因为只有一个值
+        val flowR = flow<HPDataV4?> {
+            val start = System.currentTimeMillis()
+            val re = processor?.process(data)
+            Log.e("PANJIE", "use time ${Thread.currentThread().name}  ${System.currentTimeMillis() - start}")
+            emit(re)
+        }.flowOn(Dispatchers.IO)
+
+        // todo async 方式
+//        val jjj = CoroutineScope(Dispatchers.IO).async {
+//            processor?.process(data)
+//        }
+
+        // todo runBlocking with 协程作用域方式
+//        val jj1 = runBlocking(Dispatchers.IO) {
+//            processor?.process(data)
+//        }
+
+
+         CoroutineScope(Dispatchers.Main).launch {
+//            if (jj1 != null) {
+//                v4HPData?.value = HPV4Result(rType, null, jj1)
+//            } else {
+//                v4HPData?.value = HPV4Result(rType,
+//                        NetworkErrorBean(V_DEFAULT_ERROR_CODE, ERROR_PROCESS), null)
+//            }
+
+            // 两种方式，一种 async 协程并发，我这里
+//            val resultq = jjj.await()
+//            if (resultq != null) {
+//                v4HPData?.value = HPV4Result(rType, null, resultq)
+//            } else {
+//                v4HPData?.value = HPV4Result(rType,
+//                        NetworkErrorBean(V_DEFAULT_ERROR_CODE, ERROR_PROCESS), null)
+//            }
+
+
+            flowR.collect { result ->
+                if (result != null) {
+                    v4HPData?.value = HPV4Result(rType, null, result)
+                } else {
+                    v4HPData?.value = HPV4Result(rType,
+                            NetworkErrorBean(V_DEFAULT_ERROR_CODE, ERROR_PROCESS), null)
+                }
+            }
+        }
+
+```
