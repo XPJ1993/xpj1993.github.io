@@ -236,3 +236,31 @@ fun FragmentActivity.showDia() = run {
         }
 
 ```
+
+### go 同一包名调用
+
+原因：执行file2.go时未一起编译file1.go，所以报错
+
+解决：先一起编译，再执行，如：
+
+先go build . 
+
+再go run file1.go file2.go
+
+或者直接go run *.go
+
+
+goland中自定义的包无法引入，提示 package **** is not in GOROOT (***)
+
+解决步骤：
+
+第一步，在项目的当前目录里，执行命令：go mod init ，会在当前项目目录下自动创建go.mod文件。
+
+第二步，在命令行下，进入当前项目目录，执行命令：go run main.exe，此时会自动下载和关联该项目用到的包。
+**这一步貌似也不是必须的，有了 go.mod 接下来在运行的时候再配置哪里运行单文件改为 package 就可以了**
+
+![](https://raw.githubusercontent.com/XPJ1993/images/master/20210831154033.png)
+
+执行完后，go.mod文件内容中会有引用的相关包。项目就可以正常运行了。
+
+
