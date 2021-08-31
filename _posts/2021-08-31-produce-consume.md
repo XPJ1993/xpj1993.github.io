@@ -276,7 +276,7 @@ object Main {
 
 ```
 
----
-hello : world
-h: d
----
+| 1 | 2 |
+| --- | --- |
+| hello : world | h: d | 
+| hello | baby |
