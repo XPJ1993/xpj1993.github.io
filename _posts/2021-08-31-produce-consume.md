@@ -40,8 +40,6 @@ public class TestProduceAndConsumer {
 
     /**
      * 消费者
-     *
-     * @author ctk
      */
     public static class Consumer implements Runnable {
         private List<PCData> queue;
@@ -81,8 +79,6 @@ public class TestProduceAndConsumer {
 
     /**
      * 生产者
-     *
-     * @author ctk
      */
     public static class Producter implements Runnable {
         private List<PCData> queue;
@@ -244,12 +240,9 @@ object Main {
         service.execute(p3)
         service.execute(c1)
         service.execute(c2)
-//        service.execute(c3)
-        PRTMsg("if i can print.")
         val scanner = Scanner(System.`in`)
         while (true) {
             val quit = scanner.nextInt()
-            println("quit is $quit")
             if (quit == 1) {
                 exitProcess(1)
             }
@@ -265,7 +258,6 @@ object Main {
         val p3 = Produce(queue)
         val c1 = Consumer1(queue)
         val c2 = Consumer1(queue)
-//        val c3 = Consumer(queue)
         val service = Executors.newCachedThreadPool()
         service.execute(p1)
         service.execute(p2)
@@ -275,7 +267,6 @@ object Main {
         val scanner = Scanner(System.`in`)
         while (true) {
             val quit = scanner.nextInt()
-            println("quit is $quit")
             if (quit == 1) {
                 exitProcess(1)
             }
