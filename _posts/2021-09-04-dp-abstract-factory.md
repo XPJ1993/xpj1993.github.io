@@ -8,74 +8,166 @@ tags: [Design Patterns]
 
 | 使用场景 | 实现方式 |
 |---|---|
-| 某些模块的输出不能直接匹配使用模块的格式，需要在中间增加一层 adapter 将输出转换为用户模块感兴趣的输入类型 | 定义 adapter 接口，按需转换为目标类型 |
-| **项目中实践** | 最多的是 recyclerview 里面数据转换为对应的 holder 的应用 |
+| 构造复杂对象，且对象细节不想被用户知道 | 定义简单工厂或者抽象工厂去完成对象的创建，一般使用抽象工厂好点，因为可以替换为二代工厂，或者在工厂内替换生产者的实现类 |
+| 在三方库中发威 | hilt 使用对应的 factory 构造对应的类，例如 我们使用 inject 注解定义的注入项就会生成的对应 factory 例如下面代码 GrowthTest |
+| **项目中实践** | 在广告 SDK 中使用 工厂模式产生对应的处理类 |
 
-**架构图**
+```java
 
-![](https://raw.githubusercontent.com/XPJ1993/images/master/20210902143631.png)
+package com.xpj.mygrowthpath;
+
+import dagger.internal.Factory;
+import javax.annotation.Generated;
+import javax.inject.Provider;
+
+@Generated(
+    value = "dagger.internal.codegen.ComponentProcessor",
+    comments = "https://dagger.dev"
+)
+@SuppressWarnings({
+    "unchecked",
+    "rawtypes"
+})
+public final class GrowthTest_Factory implements Factory<GrowthTest> {
+  private final Provider<GrowthTestInner> innerProvider;
+
+  public GrowthTest_Factory(Provider<GrowthTestInner> innerProvider) {
+    this.innerProvider = innerProvider;
+  }
+
+  @Override
+  public GrowthTest get() {
+    return newInstance(innerProvider.get());
+  }
+
+  public static GrowthTest_Factory create(Provider<GrowthTestInner> innerProvider) {
+    return new GrowthTest_Factory(innerProvider);
+  }
+
+  public static GrowthTest newInstance(GrowthTestInner inner) {
+    return new GrowthTest(inner);
+  }
+}
+
+
+```
+
+**抽象工厂架构图**
+
+![](https://raw.githubusercontent.com/XPJ1993/images/master/abstractFactory.png)
 
 
 ```java
-package com.example.xpj.adapters;
+package com.example.xpj.factorys;
 
 import com.example.xpj.DPConstants;
 
-public class DPFoodFactory {
-    // 食物生产者，每种类型只能生产自己擅长的食物
-    public interface DPFood<T> {
-        T produceFood();
+public class DPFactory {
+    public enum PhoneBrand {
+        MI, IPHONE, MOTO
     }
 
-    public static class DPIntFood implements DPFood<Integer> {
+    public enum PCBrand {
+        LENOVO, MICROSOFT
+    }
+
+    public interface Phone {
+        String brand();
+    }
+
+    public interface PC {
+        String brand();
+    }
+
+    public static class Mi implements Phone {
         @Override
-        public Integer produceFood() {
-            return 2333;
+        public String brand() {
+            return "mi";
         }
     }
 
-    public static class DPLongFood implements DPFood<Long> {
+    public static class IPhone implements Phone {
         @Override
-        public Long produceFood() {
-            return 6666L;
+        public String brand() {
+            return "iphone";
         }
     }
 
-    // adapter 的 接口，有两个泛型一个输入一个输出
-    public interface DPAdapter<T, R> {
-        R adapt(T t);
-    }
-
-    public static class DPInt2StringAdapter implements DPAdapter<Integer, String> {
+    public static class MOTO implements Phone {
         @Override
-        public String adapt(Integer t) {
-            return t.toString() + " im from Int. ";
+        public String brand() {
+            return "moto";
         }
     }
 
-    public static class DPLong2StringAdapter implements DPAdapter<Long, String> {
+    public static class Lenovo implements PC {
         @Override
-        public String adapt(Long t) {
-            return t.toString() + " im From Long. ";
+        public String brand() {
+            return "lenovo";
         }
     }
 
-    // 这里用户只能吃 String 的食物
-    public static class DPAdapterUser {
-        public void feedMe(String food) {
-            DPConstants.PRTMsg("yes this food is i like! " + food + " thank you!!");
+    public static class Mirosoft implements PC {
+        @Override
+        public String brand() {
+            return "mirosoft";
         }
     }
 
-    public void testAdapter() {
-        DPAdapterUser user = new DPAdapterUser();
-        // 调用对应的 adapter 去转换为用户能够消化的食物
-        user.feedMe(new DPInt2StringAdapter().adapt(new DPIntFood().produceFood()));
-        user.feedMe(new DPLong2StringAdapter().adapt(new DPLongFood().produceFood()));
+    public static class PhoneFactory {
+        public Phone createPhone(PhoneBrand brand) {
+            switch (brand) {
+                case MI:
+                    return new Mi();
+                case IPHONE:
+                    return new IPhone();
+                default:
+                    return new MOTO();
+            }
+        }
+    }
+
+    public void testSimpleFactory() {
+        PhoneFactory factory = new PhoneFactory();
+        Phone mi = factory.createPhone(PhoneBrand.MI);
+        Phone moto = factory.createPhone(PhoneBrand.MOTO);
+        Phone iPhone = factory.createPhone(PhoneBrand.IPHONE);
+        DPConstants.PRTMsg(" mi is " + mi + " moto is: " + moto + " iPhone is: " + iPhone);
+    }
+
+    public interface InnerDPFactory {
+        Phone createPhone(PhoneBrand brand);
+
+        PC createPC(PCBrand brand);
+    }
+
+    public static class AbstractDPFactoryImpl implements InnerDPFactory {
+        PhoneFactory phonef = new PhoneFactory();
+
+        @Override
+        public Phone createPhone(PhoneBrand brand) {
+            return phonef.createPhone(brand);
+        }
+
+        @Override
+        public PC createPC(PCBrand brand) {
+            switch (brand) {
+                case MICROSOFT:
+                    return new Mirosoft();
+                default:
+                    return new Lenovo();
+            }
+        }
+    }
+
+    public void testAbstractFactory() {
+        AbstractDPFactoryImpl factoryImpl = new AbstractDPFactoryImpl();
+        DPConstants.PRTMsg("AbstractDPFactoryImpl produce phone: " + factoryImpl.createPhone(PhoneBrand.MI).brand()
+                + " pc is : " + factoryImpl.createPC(PCBrand.LENOVO).brand());
     }
 }
 ```
 
 #### 总结
 
-适配器模式用的最多的是 recyclerview 里面数据与 holder 的转换，自己常用的一种类似于 adapter 的是数据转换，就是在写首页的时候有一个 transform 模块，这个也是将输入转换为我们感兴趣的模块。
+工厂模式在框架内使用时很好用的，factory 模板代码可以产生意想不到的效果，啥效果，就是可以非常自然的去使用目标产物而不用关心构造的细节，并且还有一个很神奇的功效就是 **只要接口稳定在工厂里面换具体实现类是很自然的事情，这样就能达到外部根本无感知，但是通过工厂我们达到了偷梁换柱的升级效果，代码越写越好，由于这个模式的存在用户基本上就是无痛插入，太强了。**
