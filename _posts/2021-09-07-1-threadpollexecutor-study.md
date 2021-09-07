@@ -6,6 +6,8 @@ image: /img/lifedoc/jijiji.jpg
 tags: [Java]
 ---
 
+### 基础用法
+
 Java 线程池学习
 
 **线程池创建方式：**
@@ -13,7 +15,7 @@ Java 线程池学习
 | 创建线程池 | 创建方式 |
 |---|---|
 | 通过 Executors | newFixedThreadPool(int count) 创建一个核心线程和最多线程数量相同的线程池 |
-| 同上 | newWorkStealingPool(int parallelism) 创建一个支持窃取任务的线程池 |
+| 同上 | **newWorkStealingPool(int parallelism)** 创建一个支持窃取任务的线程池 |
 | 同上 | newSingleThreadExecutor() 创建一个单线程线程池 |
 | 同上 | newCachedThreadPool 创建一个即时使用 1 分钟之后销毁多于线程的线程池，值得注意的这个线程池是没有核心线程的，一般处理瞬时任务量很大，干完这一票就没有的功能 |
 | 同上 | newSingleThreadScheduledExecutor() 支持按照一定规则的创建 task 的线程池，可以 delay 一个 task |
@@ -37,6 +39,8 @@ Java 线程池学习
 | terminated | 线程池终止之后的回调**整体线程池的终止回调，可以通过这个去回收共用的工具或者连接池等等** |
 
 ### 线程池原理
+
+线程池的原理就是
 
 ### 线程池使用场景
 
