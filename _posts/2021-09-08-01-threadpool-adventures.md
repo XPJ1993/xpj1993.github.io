@@ -41,7 +41,7 @@ tags: [ThreadPool]
 然后写 io 多路复用 相关的，第一个首属经典 select ，select 大佬功能如其名，就是突出一个 select 选择，select 大佬的实现是基于数组的，这个数组存起来那些 io 需要多路复用的使用者，这个数组长度为 1024，因此这大佬也限制了最多可以让这么多人复用，另外一个就是这大佬发现有 io ready 之后会遍历这个数组，效率也是有点底下；第二个就是 poll ，这个大佬修正了 select 大佬的数组长度限制，就转变了存储方式搞成了链表去存储，这时候长度是没有限制了，但是还是遍历去发现和通知，效率也就那样；第三个则是终极大佬， epoll ，epool 可了不得了，他一口气解决了上述俩人的缺点，epoll 大佬就突出一个厉害，我不限制长度，我通知效率贼高，不限制长度咱知道，链表存储被，通知效率提高咋搞的捏，原来呀，是 epoll 大佬聪明了，我不遍历了，我存起来一个 io 对应的 callback ，这个 io 上有 ready 信号了，我不遍历，直接 callback 伺候，效率可太高了。上边两个不够优秀， epoll 大佬这么优秀那么用法为啥子呢。
 
 ```c++
-
+// epoll 用法
 // 第一步，创建一个 epoll 实例并且返回其 fd
 epoll_create(2)
 // 第二步，注册对改 fd 感兴趣的文件描述符
@@ -49,6 +49,20 @@ epoll_ctl(2)
 // 第三步，阻塞当前线程等待 epoll 的唤醒
 epoll_wait(2)
 
+// poll 用法
+int poll(struct pollfd *fds, nfds_t nfds, int timeout);
+struct pollfd {
+    int   fd;         /* file descriptor */
+    short events;     /* requested events  监听fd 上哪些事件，它是一系列事件按位或 */
+    short revents;    /* returned events 由内核修改，来通知应用程序fd 上实际上发生了哪些事件 */
+};
+
+// select 用法
+// 每次都要重新设置nfds.因为select返回时，rfds被内核改变，里面只保存了就绪的文件描述符
+/* nfds是监听文件描述符的总数。它通常被设置为select监听的所有文件描述符的最大值加1.
+readfds, writefds, exceptfds指向可读、可写、异常等事件对应的文件描述符集合 */
+int select(int nfds,fd_set * readfds,fd_set * writefds,fd_set * exceptfds,struct timeval * timeout);
+// select https://www.cnblogs.com/zuofaqi/p/9622860.html
 ```
 
 
