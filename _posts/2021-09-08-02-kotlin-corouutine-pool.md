@@ -421,5 +421,16 @@ kotiln 线程池也是一个神奇的物种啊。
 ##### 未完待续的分析
 
 LockFreeTaskQueue
+
 WorkingQueue
+
+state
+
+localQueue
+
+indexInArray
+
+##### 核心
+
+核心是 atomic workerCtl 存储状态，以及改变状态。
 
