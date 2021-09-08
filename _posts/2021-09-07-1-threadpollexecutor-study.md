@@ -15,7 +15,7 @@ Java 线程池学习
 | 创建线程池 | 创建方式 |
 |---|---|
 | 通过 Executors | newFixedThreadPool(int count) 创建一个核心线程和最多线程数量相同的线程池 |
-| 同上 | **newWorkStealingPool(int parallelism)** 创建一个支持窃取任务的线程池 |
+| 同上 | **newWorkStealingPool(int parallelism)** 创建一个支持窃取任务的线程池，https://www.cnblogs.com/shijiaqi1066/p/4631466.html 这个主要是多个线程有维护他们自己的任务队列，有的线程忙完了，会随机获取别的线程的任务去做 |
 | 同上 | newSingleThreadExecutor() 创建一个单线程线程池 |
 | 同上 | newCachedThreadPool 创建一个即时使用 1 分钟之后销毁多于线程的线程池，值得注意的这个线程池是没有核心线程的，一般处理瞬时任务量很大，干完这一票就没有的功能 |
 | 同上 | newSingleThreadScheduledExecutor() 支持按照一定规则的创建 task 的线程池，可以 delay 一个 task |
@@ -80,7 +80,7 @@ Java 线程池学习
             // 再次 check 一边，没有运行且移除掉这个 task 之后 触发 reject
             if (! isRunning(recheck) && remove(command))
                 reject(command);
-            else if (workerCountOf(recheck) == 0) // 如果此时 worker 为 0 了，创建一个新的 worker， 这里 task 为 null 可能会触发直接返回 false
+            else if (workerCountOf(recheck) == 0) // 如果此时 worker 为 0 了，创建一个新的 worker， 这里 task 为 null 也是允许的只是说没有第一个任务而已，因为上边已经加入任务到队列了，这里在 runWorker 的时候还会去队列里面取数据，这里如果不为空会重复执行 task
                 addWorker(null, false);
         }
         // 最终把这个 task 添加到非核心线程中，这里如果 worker count 大于等于 maximumPoolSize 就会触发拒绝
@@ -125,6 +125,7 @@ Java 线程池学习
             w = new Worker(firstTask);
             final Thread t = w.thread;
             if (t != null) {
+                // 这里是共享一把可重入锁，因为要操作 workers
                 final ReentrantLock mainLock = this.mainLock;
                 mainLock.lock();
                 try {
@@ -154,6 +155,7 @@ Java 线程池学习
                 }
             }
         } finally {
+            // add 失败会减一并且尝试清除任务，并且触发终止线程池操作，很多信号会调用 tryTerminate ，他的名字是 try 不一定立刻终止，因为有任务在的话还是会保证任务执行完毕的
             if (! workerStarted)
                 addWorkerFailed(w);
         }
