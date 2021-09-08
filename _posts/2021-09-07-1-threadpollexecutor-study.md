@@ -3,7 +3,7 @@ layout: post
 title: Java 线程池学习
 subtitle: 线程池是 Java 编程中非常好用的一个工具，对于多线程编程，这里简直是神器
 image: /img/lifedoc/jijiji.jpg
-tags: [Java]
+tags: [ThreadPool]
 ---
 
 ### 基础用法
