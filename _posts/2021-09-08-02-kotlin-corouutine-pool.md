@@ -19,11 +19,11 @@ kotiln 线程池也是一个神奇的物种啊。
 ### kotlin 线程池解析
 
 一样滴，kotlin 线程池也是 task 的历险记
-.1
-.1
+ .1
+ .1
 ##### task 进入魔鬼池
-.1
-.2
+ .1
+ .2
 ```kotlin
 // 陷入了协程中的本质，这里是分发 block 
     fun dispatch(block: Runnable, taskContext: TaskContext = NonBlockingContext, tailDispatch: Boolean = false) {
@@ -60,7 +60,7 @@ kotiln 线程池也是一个神奇的物种啊。
     }
 ```
 .1
-.1
+ 
 .1
 ##### 负责消化 task 的魔鬼 worker
 .1
@@ -425,8 +425,10 @@ kotiln 线程池也是一个神奇的物种啊。
 .1
 .1
 ##### 未完待续的分析
-.1
-.1
+ .1
+ .1
+
+
 LockFreeTaskQueue
 
 WorkingQueue
@@ -442,3 +444,8 @@ indexInArray
 .1
 核心是 atomic workerCtl 存储状态，以及改变状态。
 
+2
+1
+##### 管道失序
+
+在 linux 或者 mac 下使用管道之后在使用 grep 会发现内容不仅仅是 history 的会被 grep，全部文件都会，原因是我在 grep 的时候增加了 -rns 参数。
