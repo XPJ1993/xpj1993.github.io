@@ -25,4 +25,6 @@ tags: [Kotlin]
 | 使用一个专门的模块管理引入包控制 | 一个 module 去控制不同 module 的公共引用 |
 | 信令相关需要封装为统一模块 | 信令模块 |
 | 权限相关的使用 permissionX | guolin 的 permissionX 库去解决权限问题 |
+| jain-sip 示例 | https://github.com/usnistgov/jsip/blob/master/src/examples/android/simplecallsetup/Shootme.java |
+| content1 | content2 |
 | content1 | content2 |
