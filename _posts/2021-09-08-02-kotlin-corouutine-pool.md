@@ -19,11 +19,11 @@ kotiln 线程池也是一个神奇的物种啊。
 ### kotlin 线程池解析
 
 一样滴，kotlin 线程池也是 task 的历险记
-.
-.
+.1
+.1
 ##### task 进入魔鬼池
-.
-.
+.1
+.2
 ```kotlin
 // 陷入了协程中的本质，这里是分发 block 
     fun dispatch(block: Runnable, taskContext: TaskContext = NonBlockingContext, tailDispatch: Boolean = false) {
@@ -59,12 +59,12 @@ kotiln 线程池也是一个神奇的物种啊。
         // //
     }
 ```
-.
-.
-.
+.1
+.1
+.1
 ##### 负责消化 task 的魔鬼 worker
-.
-.
+.1
+.1
 ```kotlin
     internal inner class Worker private constructor() : Thread() {
         init {
@@ -422,11 +422,11 @@ kotiln 线程池也是一个神奇的物种啊。
     }
 
 ```
-.
-.
+.1
+.1
 ##### 未完待续的分析
-.
-.
+.1
+.1
 LockFreeTaskQueue
 
 WorkingQueue
@@ -436,9 +436,9 @@ state
 localQueue
 
 indexInArray
-.
-.
+.1
+.1
 ##### 核心
-.
+.1
 核心是 atomic workerCtl 存储状态，以及改变状态。
 
