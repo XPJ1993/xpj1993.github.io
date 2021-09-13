@@ -31,7 +31,7 @@ plugins {
 javaCompileOptions {
             annotationProcessorOptions {
                 includeCompileClasspath true
-                // <span style="color:#871F78;">特别注意这里是 += 而不是直接等于</span>，因为我这个项目还有 hilt 以及 room 相关的 注解处理器 所以这里需要 arguments += 否则运行崩溃，别的注解解析失败
+                // **特别注意这里是 += 而不是直接等于** ，因为我这个项目还有 hilt 以及 room 相关的 注解处理器 所以这里需要 arguments += 否则运行崩溃，别的注解解析失败
                 arguments += [AROUTER_MODULE_NAME: project.getName()]
             }
         }
@@ -43,7 +43,7 @@ javaCompileOptions {
 ```
 
 ```kotlin
-// 目标 Activity 里面增加 route 注解， <span style="color:#871F78;"> 注意这里的路径至少两层，且以 / 分割</span>
+// 目标 Activity 里面增加 route 注解， 注意这里的路径至少两层，且以 / 分割
 @Route(path = "/wulala/la")
 class PBArouterTest : FragmentActivity() {
 
@@ -358,6 +358,203 @@ ARouter.getInstance().build("/wulala/la").navigation()
 |---|---|
 | Arouter | 提供各种入口的地方，就是外界的一个接口没啥可说的 |
 | _Arouter | Arouter 幕后英雄，实际上是他在干活 |
-|  |  |
-|  |  |
-|  |  |
+| Postcard | A container that contains the roadmap. <span style="color:#871F78;">每一个具体的导航的信息存储，路线图存放地，这个是核心，最终具体的跳转啥的都是在这里面进行的</span> |
+| PathReplaceService |  重写跳转URL // 实现PathReplaceService接口，并加上一个Path内容任意的注解即可 |
+| LogisticsCenter |  LogisticsCenter contains all of the map.
+1. Creates instance when it is first used.
+2. Handler Multi-Module relationship map(*) 处理多 module 关系图
+3. Complex logic to solve duplicate group definition
+这个类也是个 大佬 啊，这里也提供了 晚上 Postcard 的方法 |
+| AitoWired | 依赖注入 |
+
+Postcard（明信片，特么的 Android 里面叫 Intent 那我就叫 明星片，反正目的都是为了传递信息。。） navigation 解析：
+```java
+// 通过 path 解析生成对应的 postcard，主要就是设置对应的 path 和 group
+    protected Postcard build(String path, String group, Boolean afterReplace) {
+        if (TextUtils.isEmpty(path) || TextUtils.isEmpty(group)) {
+            throw new HandlerException(Consts.TAG + "Parameter is invalid!");
+        } else {
+            if (!afterReplace) {
+                PathReplaceService pService = ARouter.getInstance().navigation(PathReplaceService.class);
+                if (null != pService) {
+                    path = pService.forString(path);
+                }
+            }
+            return new Postcard(path, group);
+        }
+    }
+
+
+// navigation 方法，Postcard 最终会调用到 Arouter 里
+    public Object navigation(Context mContext, Postcard postcard, int requestCode, NavigationCallback callback) {
+        return _ARouter.getInstance().navigation(mContext, postcard, requestCode, callback);
+    }
+
+
+// 最终调用地
+ protected Object navigation(final Context context, final Postcard postcard, final int requestCode, final NavigationCallback callback) {
+     /*
+     预处理服务
+    ``` java
+    // 实现 PretreatmentService 接口，并加上一个Path内容任意的注解即可
+    @Route(path = "/xxx/xxx")
+    public class PretreatmentServiceImpl implements PretreatmentService {
+        @Override
+        public boolean onPretreatment(Context context, Postcard postcard) {
+            // 跳转前预处理，如果需要自行处理跳转，该方法返回 false 即可
+        }
+     */
+     // 1. 获取预处理，如果自己已经处理了，那么就不会进入下面的流程
+        PretreatmentService pretreatmentService = ARouter.getInstance().navigation(PretreatmentService.class);
+        if (null != pretreatmentService && !pretreatmentService.onPretreatment(context, postcard)) {
+            // Pretreatment failed, navigation canceled.
+            return null;
+        }
+
+        // Set context to postcard.
+        postcard.setContext(null == context ? mContext : context);
+
+        try {
+            // 2. 对 Postcard 进行深加工，首先从 routes 的 map 中找到对应的 RouteMeta 然后将这里面的信息放到 Postcard 中，例如 target bundle type priority 等等
+            LogisticsCenter.completion(postcard);
+        } catch (NoRouteFoundException ex) {
+            logger.warning(Consts.TAG, ex.getMessage());
+
+            if (debuggable()) {
+                // Show friendly tips for user.
+                runInMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(mContext, "There's no route matched!\n" +
+                                " Path = [" + postcard.getPath() + "]\n" +
+                                " Group = [" + postcard.getGroup() + "]", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+
+            if (null != callback) {
+                callback.onLost(postcard);
+            } else {
+                // No callback for this invoke, then we use the global degrade service.
+                DegradeService degradeService = ARouter.getInstance().navigation(DegradeService.class);
+                if (null != degradeService) {
+                    degradeService.onLost(context, postcard);
+                }
+            }
+
+            return null;
+        }
+
+        if (null != callback) {
+            callback.onFound(postcard);
+        }
+
+        // 3. 判断是否绿色通道，绿色就主线程跑，否则在异步线程 搞 intercept 先    
+        if (!postcard.isGreenChannel()) {   // It must be run in async thread, maybe interceptor cost too mush time made ANR.
+            interceptorService.doInterceptions(postcard, new InterceptorCallback() {
+                /**
+                 * Continue process
+                 *
+                 * @param postcard route meta
+                 */
+                @Override
+                public void onContinue(Postcard postcard) {
+                    _navigation(postcard, requestCode, callback);
+                }
+
+                /**
+                 * Interrupt process, pipeline will be destory when this method called.
+                 *
+                 * @param exception Reson of interrupt.
+                 */
+                @Override
+                public void onInterrupt(Throwable exception) {
+                    if (null != callback) {
+                        callback.onInterrupt(postcard);
+                    }
+
+                    logger.info(Consts.TAG, "Navigation failed, termination by interceptor : " + exception.getMessage());
+                }
+            });
+        } else {
+            return _navigation(postcard, requestCode, callback);
+        }
+
+        return null;
+    }
+
+// _Arouter 中的 _navigation 实现
+    private Object _navigation(final Postcard postcard, final int requestCode, final NavigationCallback callback) {
+        final Context currentContext = postcard.getContext();
+
+        switch (postcard.getType()) {
+            case ACTIVITY:
+                // 1.1 activity 首先封装 Intent
+                // Build intent
+                final Intent intent = new Intent(currentContext, postcard.getDestination());
+                intent.putExtras(postcard.getExtras());
+
+                // 1.2 Set flags.
+                int flags = postcard.getFlags();
+                if (0 != flags) {
+                    intent.setFlags(flags);
+                }
+
+                // 1.3 Non activity, need FLAG_ACTIVITY_NEW_TASK
+                if (!(currentContext instanceof Activity)) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                }
+
+                // 1.4 Set Actions
+                String action = postcard.getAction();
+                if (!TextUtils.isEmpty(action)) {
+                    intent.setAction(action);
+                }
+
+                // 1.5 Navigation in main looper.
+                runInMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        startActivity(requestCode, currentContext, intent, postcard, callback);
+                    }
+                });
+                break;
+            case PROVIDER:
+                // 2. 如果是 Provider 直接返回，杂用，用户看着办
+                return postcard.getProvider();
+            case BOARDCAST:
+            case CONTENT_PROVIDER:
+            case FRAGMENT:
+                // 3. 是 Fragment 返回，然后看用户怎么用
+                Class<?> fragmentMeta = postcard.getDestination();
+                try {
+                    Object instance = fragmentMeta.getConstructor().newInstance();
+                    if (instance instanceof Fragment) {
+                        ((Fragment) instance).setArguments(postcard.getExtras());
+                    } else if (instance instanceof android.support.v4.app.Fragment) {
+                        ((android.support.v4.app.Fragment) instance).setArguments(postcard.getExtras());
+                    }
+
+                    return instance;
+                } catch (Exception ex) {
+                    logger.error(Consts.TAG, "Fetch fragment instance error, " + TextUtils.formatStackTrace(ex.getStackTrace()));
+                }
+            case METHOD:
+            case SERVICE:
+            default:
+                return null;
+        }
+
+        return null;
+    }
+
+```
+
+### 总结
+
+经过上边的完整分析，可以看到完整的 Arouter 也不是特别复杂，但是中间也有一些精巧的设计，例如 interceptor provider 以及 更多 预处理或者 重写跳转 URL 等等类似 hook 的功能，人家的设计还是比较完整的。
+
+整体思想梳理，首先就是通过 Router 等注解收集各种信息，收集完毕后会在之后的 Postcard 中承载，然后经过最终的 _Arouter 去 navigation 分发和调用。
+
+还有依赖注入，升降级别等等。
+
