@@ -11,10 +11,8 @@ tags: [三方库]
 | 文章目录 | 代码解析 |
 |---|---|
 | 使用方式解析 | 通过在 build.gradle 以及 文件中具体使用解析怎么使用 arouter 去打开对应 path 的 activity |
-| content1 | content2 |
-| content1 | content2 |
-| content1 | content2 |
-| content1 | content2 |
+| router 原理解析 | 实现 router 功能，需要实现那些 |
+| Arouter 怎么做 | Arouter 的实现以及其技术选型与实现原理 |
 
 #### 使用方式
 
@@ -58,7 +56,7 @@ ARouter.getInstance().build("/wulala/la").navigation()
 
 接着在 代码中使用 router 注解去声明该类对应的 path 是哪个，然后在调用的地方去通过获取 arouter 的 instance build 对应的 postcard 然后 navigation 就可以了。
 
-#### 原理解析
+#### router 原理解析
 
 经过上一节简单使用可以发现 arouter 用起来并不是很复杂，那么它的实现原理是什么呢，如果是我们自己写要怎么写从哪里入手去做一个 router 框架。
 
@@ -80,6 +78,286 @@ ARouter.getInstance().build("/wulala/la").navigation()
 
 ##### 目标收集
 
-arouter
+arouter 是选择的注解加 apt 去收集信息的，具体地可以看他的 router processor 代码：
 
+具体地，可以查看 arouter-compiler 代码:
 
+parseRoutes ->
+
+```java
+private Map<String, Set<RouteMeta>> groupMap = new HashMap<>(); // ModuleName and routeMeta.
+    private Map<String, String> rootMap = new TreeMap<>(); 
+
+    private void parseRoutes(Set<? extends Element> routeElements) throws IOException {
+        if (CollectionUtils.isNotEmpty(routeElements)) {
+            // prepare the type an so on.
+
+            logger.info(">>> Found routes, size is " + routeElements.size() + " <<<");
+
+            rootMap.clear();
+            // 1. 首先是收集对应的 type mirror 这个是 Java 的定义
+            TypeMirror type_Activity = elementUtils.getTypeElement(ACTIVITY).asType();
+            TypeMirror type_Service = elementUtils.getTypeElement(SERVICE).asType();
+            TypeMirror fragmentTm = elementUtils.getTypeElement(FRAGMENT).asType();
+            TypeMirror fragmentTmV4 = elementUtils.getTypeElement(Consts.FRAGMENT_V4).asType();
+
+            // Interface of ARouter
+            // 2. 收集对应的 element 这里是 arouter 定义的类
+            TypeElement type_IRouteGroup = elementUtils.getTypeElement(IROUTE_GROUP);
+            TypeElement type_IProviderGroup = elementUtils.getTypeElement(IPROVIDER_GROUP);
+            ClassName routeMetaCn = ClassName.get(RouteMeta.class);
+            ClassName routeTypeCn = ClassName.get(RouteType.class);
+
+            /*
+               3. 创建对应的 map 类型如下
+               Build input type, format as :
+               ```Map<String, Class<? extends IRouteGroup>>```
+             */
+            ParameterizedTypeName inputMapTypeOfRoot = ParameterizedTypeName.get(
+                    ClassName.get(Map.class),
+                    ClassName.get(String.class),
+                    ParameterizedTypeName.get(
+                            ClassName.get(Class.class),
+                            WildcardTypeName.subtypeOf(ClassName.get(type_IRouteGroup))
+                    )
+            );
+
+            /*
+              4. 同上，创建对应的 map
+              ```Map<String, RouteMeta>```
+             */
+            ParameterizedTypeName inputMapTypeOfGroup = ParameterizedTypeName.get(
+                    ClassName.get(Map.class),
+                    ClassName.get(String.class),
+                    ClassName.get(RouteMeta.class)
+            );
+
+            /*
+              5. 生成对应的 spec 分别对应 routes 别名 atlas providers 等，这里是使用 的 JavaOpt 代码生成对应的代码 ParameterSpec 这些是 JavaOpt 对应的类
+              Build input param name.
+             */
+            ParameterSpec rootParamSpec = ParameterSpec.builder(inputMapTypeOfRoot, "routes").build();
+            ParameterSpec groupParamSpec = ParameterSpec.builder(inputMapTypeOfGroup, "atlas").build();
+            ParameterSpec providerParamSpec = ParameterSpec.builder(inputMapTypeOfGroup, "providers").build();  // Ps. its param type same as groupParamSpec!
+
+            /*
+              6. 创建 laodinto 方法的描述
+              Build method : 'loadInto'
+             */
+            MethodSpec.Builder loadIntoMethodOfRootBuilder = MethodSpec.methodBuilder(METHOD_LOAD_INTO)
+                    .addAnnotation(Override.class)
+                    .addModifiers(PUBLIC)
+                    .addParameter(rootParamSpec);
+
+            //  Follow a sequence, find out metas of group first, generate java file, then statistics them as root.
+            for (Element element : routeElements) {
+                TypeMirror tm = element.asType();
+                Route route = element.getAnnotation(Route.class);
+                RouteMeta routeMeta;
+
+                // 7. 收集 Activity or Fragment
+                if (types.isSubtype(tm, type_Activity) || types.isSubtype(tm, fragmentTm) || types.isSubtype(tm, fragmentTmV4)) {
+                    // Get all fields annotation by @Autowired
+                    Map<String, Integer> paramsType = new HashMap<>();
+                    Map<String, Autowired> injectConfig = new HashMap<>();
+                    // 7.1 对使用 Autowired 的变量进行获取
+                    injectParamCollector(element, paramsType, injectConfig);
+
+                    if (types.isSubtype(tm, type_Activity)) {
+                        // Activity
+                        logger.info(">>> Found activity route: " + tm.toString() + " <<<");
+                        routeMeta = new RouteMeta(route, element, RouteType.ACTIVITY, paramsType);
+                    } else {
+                        // Fragment
+                        logger.info(">>> Found fragment route: " + tm.toString() + " <<<");
+                        routeMeta = new RouteMeta(route, element, RouteType.parse(FRAGMENT), paramsType);
+                    }
+
+                    // 7.2 设置进去 7.1 收集的数据
+                    routeMeta.setInjectConfig(injectConfig);
+                } else if (types.isSubtype(tm, iProvider)) {         // IProvider 8. 收集 IProvider 相关的实现
+                    logger.info(">>> Found provider route: " + tm.toString() + " <<<");
+                    routeMeta = new RouteMeta(route, element, RouteType.PROVIDER, null);
+                } else if (types.isSubtype(tm, type_Service)) {           // Service 9. 收集 Service 相关的实现
+                    logger.info(">>> Found service route: " + tm.toString() + " <<<");
+                    routeMeta = new RouteMeta(route, element, RouteType.parse(SERVICE), null);
+                } else {
+                    throw new RuntimeException("The @Route is marked on unsupported class, look at [" + tm.toString() + "].");
+                }
+
+                // 10. 对收集到的信息使用 group 进行归类，这个 group 对应的是定义的 path 其中 path 必须 / 开头且不能少于 / 一个的原因就在这里，因为这里默认第一个为 group 类别
+                categories(routeMeta);
+            }
+
+            MethodSpec.Builder loadIntoMethodOfProviderBuilder = MethodSpec.methodBuilder(METHOD_LOAD_INTO)
+                    .addAnnotation(Override.class)
+                    .addModifiers(PUBLIC)
+                    .addParameter(providerParamSpec);
+
+            Map<String, List<RouteDoc>> docSource = new HashMap<>();
+
+            // 11. 通过 JavaOpt 生成对应的类 Start generate java source, structure is divided into upper and lower levels, used for demand initialization.
+            for (Map.Entry<String, Set<RouteMeta>> entry : groupMap.entrySet()) {
+                String groupName = entry.getKey();
+
+                MethodSpec.Builder loadIntoMethodOfGroupBuilder = MethodSpec.methodBuilder(METHOD_LOAD_INTO)
+                        .addAnnotation(Override.class)
+                        .addModifiers(PUBLIC)
+                        .addParameter(groupParamSpec);
+
+                List<RouteDoc> routeDocList = new ArrayList<>();
+
+                // Build group method body
+                Set<RouteMeta> groupData = entry.getValue();
+                for (RouteMeta routeMeta : groupData) {
+                    RouteDoc routeDoc = extractDocInfo(routeMeta);
+
+                    ClassName className = ClassName.get((TypeElement) routeMeta.getRawType());
+
+                    switch (routeMeta.getType()) {
+                        // 11.1 生成 IProvider 类
+                        case PROVIDER:  // Need cache provider's super class
+                            List<? extends TypeMirror> interfaces = ((TypeElement) routeMeta.getRawType()).getInterfaces();
+                            for (TypeMirror tm : interfaces) {
+                                routeDoc.addPrototype(tm.toString());
+
+                                if (types.isSameType(tm, iProvider)) {   // Its implements iProvider interface himself.
+                                    // This interface extend the IProvider, so it can be used for mark provider
+                                    loadIntoMethodOfProviderBuilder.addStatement(
+                                            "providers.put($S, $T.build($T." + routeMeta.getType() + ", $T.class, $S, $S, null, " + routeMeta.getPriority() + ", " + routeMeta.getExtra() + "))",
+                                            (routeMeta.getRawType()).toString(),
+                                            routeMetaCn,
+                                            routeTypeCn,
+                                            className,
+                                            routeMeta.getPath(),
+                                            routeMeta.getGroup());
+                                } else if (types.isSubtype(tm, iProvider)) {
+                                    // 11.2 生成 IProvider 的子类 This interface extend the IProvider, so it can be used for mark provider
+                                    loadIntoMethodOfProviderBuilder.addStatement(
+                                            "providers.put($S, $T.build($T." + routeMeta.getType() + ", $T.class, $S, $S, null, " + routeMeta.getPriority() + ", " + routeMeta.getExtra() + "))",
+                                            tm.toString(),    // So stupid, will duplicate only save class name.
+                                            routeMetaCn,
+                                            routeTypeCn,
+                                            className,
+                                            routeMeta.getPath(),
+                                            routeMeta.getGroup());
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+
+                    // Make map body for paramsType
+                    StringBuilder mapBodyBuilder = new StringBuilder();
+                    Map<String, Integer> paramsType = routeMeta.getParamsType();
+                    Map<String, Autowired> injectConfigs = routeMeta.getInjectConfig();
+                    if (MapUtils.isNotEmpty(paramsType)) {
+                        List<RouteDoc.Param> paramList = new ArrayList<>();
+
+                        for (Map.Entry<String, Integer> types : paramsType.entrySet()) {
+                            mapBodyBuilder.append("put(\"").append(types.getKey()).append("\", ").append(types.getValue()).append("); ");
+
+                            RouteDoc.Param param = new RouteDoc.Param();
+                            Autowired injectConfig = injectConfigs.get(types.getKey());
+                            param.setKey(types.getKey());
+                            param.setType(TypeKind.values()[types.getValue()].name().toLowerCase());
+                            param.setDescription(injectConfig.desc());
+                            param.setRequired(injectConfig.required());
+
+                            paramList.add(param);
+                        }
+
+                        routeDoc.setParams(paramList);
+                    }
+                    String mapBody = mapBodyBuilder.toString();
+
+                    // 11.3 创建 atlas 相关的类
+                    loadIntoMethodOfGroupBuilder.addStatement(
+                            "atlas.put($S, $T.build($T." + routeMeta.getType() + ", $T.class, $S, $S, " + (StringUtils.isEmpty(mapBody) ? null : ("new java.util.HashMap<String, Integer>(){{" + mapBodyBuilder.toString() + "}}")) + ", " + routeMeta.getPriority() + ", " + routeMeta.getExtra() + "))",
+                            routeMeta.getPath(),
+                            routeMetaCn,
+                            routeTypeCn,
+                            className,
+                            routeMeta.getPath().toLowerCase(),
+                            routeMeta.getGroup().toLowerCase());
+
+                    routeDoc.setClassName(className.toString());
+                    routeDocList.add(routeDoc);
+                }
+
+                // 11.4 使用 JavaOpt 生成 groups 相关的 Java 代码 Generate groups
+                String groupFileName = NAME_OF_GROUP + groupName;
+                JavaFile.builder(PACKAGE_OF_GENERATE_FILE,
+                        TypeSpec.classBuilder(groupFileName)
+                                .addJavadoc(WARNING_TIPS)
+                                .addSuperinterface(ClassName.get(type_IRouteGroup))
+                                .addModifiers(PUBLIC)
+                                .addMethod(loadIntoMethodOfGroupBuilder.build())
+                                .build()
+                ).build().writeTo(mFiler);
+
+                logger.info(">>> Generated group: " + groupName + "<<<");
+                rootMap.put(groupName, groupFileName);
+                docSource.put(groupName, routeDocList);
+            }
+
+            // 12. 输出 routes 信息到 routes map 中
+            if (MapUtils.isNotEmpty(rootMap)) {
+                // Generate root meta by group name, it must be generated before root, then I can find out the class of group.
+                for (Map.Entry<String, String> entry : rootMap.entrySet()) {
+                    loadIntoMethodOfRootBuilder.addStatement("routes.put($S, $T.class)", entry.getKey(), ClassName.get(PACKAGE_OF_GENERATE_FILE, entry.getValue()));
+                }
+            }
+
+            // 13. 输出 JavaDoc Output route doc
+            if (generateDoc) {
+                docWriter.append(JSON.toJSONString(docSource, SerializerFeature.PrettyFormat));
+                docWriter.flush();
+                docWriter.close();
+            }
+
+            // 14. 输出 Provider 相关到文件中，也就是生成 Class 文件，会编译到 Jar 中 Write provider into disk
+            String providerMapFileName = NAME_OF_PROVIDER + SEPARATOR + moduleName;
+            JavaFile.builder(PACKAGE_OF_GENERATE_FILE,
+                    TypeSpec.classBuilder(providerMapFileName)
+                            .addJavadoc(WARNING_TIPS)
+                            .addSuperinterface(ClassName.get(type_IProviderGroup))
+                            .addModifiers(PUBLIC)
+                            .addMethod(loadIntoMethodOfProviderBuilder.build())
+                            .build()
+            ).build().writeTo(mFiler);
+
+            logger.info(">>> Generated provider map, name is " + providerMapFileName + " <<<");
+
+            // 15. 输出 Routes 到相关文件中 Write root meta into disk.
+            String rootFileName = NAME_OF_ROOT + SEPARATOR + moduleName;
+            JavaFile.builder(PACKAGE_OF_GENERATE_FILE,
+                    TypeSpec.classBuilder(rootFileName)
+                            .addJavadoc(WARNING_TIPS)
+                            .addSuperinterface(ClassName.get(elementUtils.getTypeElement(ITROUTE_ROOT)))
+                            .addModifiers(PUBLIC)
+                            .addMethod(loadIntoMethodOfRootBuilder.build())
+                            .build()
+            ).build().writeTo(mFiler);
+
+            logger.info(">>> Generated root, name is " + rootFileName + " <<<");
+        }
+    }
+```
+
+至此， arouter 里面最核心的信息收集告一段落，其余的 AutowiredProcessor 、InterceptorProcessor 也是大同小异，都是<span style="color:#871F78;">使用 apt 对对应的 注解进行处理和收集，然后借助 JavaOpt 去生成对应的 class 文件</span>，这样使得咱们调用的时候直接有对应的类去初始化等等。
+
+##### 目标跳转
+
+```java
+ARouter.getInstance().build("/wulala/la").navigation()
+```
+
+| 关键角色 | 角色作用 |
+|---|---|
+| Arouter | 提供各种入口的地方，就是外界的一个接口没啥可说的 |
+| _Arouter | Arouter 幕后英雄，实际上是他在干活 |
+|  |  |
+|  |  |
+|  |  |
