@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Kotlin 特性学习（5）
+title: Kotlin 特性学习（5）通道和 Actor
 subtitle: Kotlin 通道与 Actor
 image: /img/lifedoc/jijiji.jpg
 tags: [Kotlin]
@@ -9,8 +9,7 @@ tags: [Kotlin]
 
 ### 脑图
 
-![](https://raw.githubusercontent.com/XPJ1993/images/master/202108291615
-¸38.png)
+![](https://raw.githubusercontent.com/XPJ1993/images/master/20210829161538.png)
 
 ### 总结
 

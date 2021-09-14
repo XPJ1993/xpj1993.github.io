@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Kotlin 特性学习（3）
+title: Kotlin 特性学习（3）Flow 学习
 subtitle: Kotlin 流学习
 image: /img/lifedoc/jijiji.jpg
 tags: [Kotlin]

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Kotlin 特性学习（2）
+title: Kotlin 特性学习（2）协程学习
 subtitle: Kotlin 协程学习
 image: /img/lifedoc/jijiji.jpg
 tags: [Kotlin]

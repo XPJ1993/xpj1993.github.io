@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Kotlin 特性学习（4）
+title: Kotlin 特性学习（4）协程异常与监督
 subtitle: Kotlin 协程异常及监督机制
 image: /img/lifedoc/jijiji.jpg
 tags: [Kotlin]
