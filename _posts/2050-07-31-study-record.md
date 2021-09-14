@@ -263,4 +263,14 @@ goland中自定义的包无法引入，提示 package **** is not in GOROOT (***
 
 执行完后，go.mod文件内容中会有引用的相关包。项目就可以正常运行了。
 
+### ubuntu 20.04 上使用 openvpn
 
+步骤：
+
+```shell
+# 1. 将对应的 ovpn 文件放到 /etc/openvpn/ 下
+# 2. 使用 sudo 启动 vpn
+sudo openvpn /etc/openvpn/ipalfish.ovpn
+# 3. 登录密码和用户名为 lpad 账号密码
+xuepanjie12539 / Xpj1d6 
+```
