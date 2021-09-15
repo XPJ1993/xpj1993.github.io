@@ -6,6 +6,9 @@ image: /img/lifedoc/jijiji.jpg
 tags: [三方库]
 ---
 
+三方库总目录：
+[三方库](https://xpj1993.github.io/2021-09-10-02-third-libary/)
+
 ### Leakcanary 解析
 
 按照解析第一个 Arouter 的套路来，首先是使用，然后想如果自己做怎么做，然后分析别人是怎样实现这个功能的。
