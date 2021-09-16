@@ -274,3 +274,5 @@ sudo openvpn /etc/openvpn/ipalfish.ovpn
 # 3. 登录密码和用户名为 lpad 账号密码
 xuepanjie12539 / Xpj1d6 
 ```
+
+链表翻转，使用 linkedlist 当 stack 栈用，然后使用 getLast 啥的从最后取，倒序取就是 stack 了，去了之后构建一个新的链表，就翻转了。
