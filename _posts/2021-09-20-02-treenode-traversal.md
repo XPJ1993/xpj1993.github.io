@@ -135,3 +135,32 @@ class TreeNode constructor(val value: Int) {
 
 ```
 
+
+二叉树非递归遍历：
+
+```kotlin
+        // 使用 while 循环对树进行遍历
+        fun testPreOrderUseLoop(root: ALGTreeNode?, list: LinkedList<Int>) {
+            if (root == null) {
+                return
+            }
+
+            val s = Stack<ALGTreeNode>()
+            var rt : ALGTreeNode? = root
+            while (rt != null || !s.isEmpty()) {
+                while (rt != null) {
+                    // 这里放进去值，不是从 s 里面遍历再放进 list
+                    list.add(rt.value)
+                    // 基本思路是，一路往左走，撞了南墙（碰到NULL）就回头；
+                    // 回头摆到右（子树的根），接着往左走（循环）
+                    s.push(rt)
+                    rt = rt.left
+                }
+                if (!s.isEmpty()) {
+                    rt = s.pop()
+                    rt = rt.right
+                }
+            }
+        }
+
+```
