@@ -275,4 +275,6 @@ sudo openvpn /etc/openvpn/ipalfish.ovpn
 xuepanjie12539 / Xpj1d6 
 ```
 
+### 链表反转
 链表翻转，使用 linkedlist 当 stack 栈用，然后使用 getLast 啥的从最后取，倒序取就是 stack 了，去了之后构建一个新的链表，就翻转了。
+也可以直接用栈，只是 Java 的栈实现没有 top 而已，pop 就相当于把顶端的给推出去。
