@@ -181,7 +181,6 @@ Constructor<?> jgt2 = c1.getDeclaredConstructor(String.class);// 首先获取有
             sb.append("\n").append("method: ").append(m);
         }
 
-
         // 拿到内部类
         Class<?> jinner = Class.forName("com.xpj.javagrowth.javaref.JGTest1$JGTest1Inner");
         Method gtinner = c1.getDeclaredMethod("getInner", int.class, String.class);
@@ -348,7 +347,7 @@ Java 反射效率低主要原因是：
         sb = new StringBuilder();
         sb.append("\n").append("testProxy\n");
         JGPJavaHandler jgProxyHandler = new JGPJavaHandler();
-        // 这个是kotlin实现的版本，这里因为对数组的不友好导致不能正常使用
+        // 这个是 kotlin 实现的版本，这里因为对数组的不友好导致不能正常使用
 //        JGProxyHandler jgProxyHandler = new JGProxyHandler();
         jgProxyHandler.setSeller(new JGPXiaohong());
         JGPSeller hong = (JGPSeller) Proxy.newProxyInstance(JGPSeller.class.getClassLoader(),
@@ -451,6 +450,8 @@ public final class $Proxy0 extends Proxy implements Person
   {
     try
     {
+      // 这里的方法从那里来，都是在 Proxy 里面通过 getMethodsRecursive 去统计的 methods 最后通过 这个方法 getDeclaredMethods 去统计需要代理的接口类
+      //  return generateProxy(proxyName, interfaces, loader, methodsArray, exceptionsArray); 在 Android 里面是使用的 native 去完成这个 Proxy 代理类的生成的。
       //看看这儿静态块儿里面有什么，是不是找到了giveMoney方法。请记住giveMoney通过反射得到的名字m3，其他的先不管
       m1 = Class.forName("java.lang.Object").getMethod("equals", new Class[] { Class.forName("java.lang.Object") });
       m2 = Class.forName("java.lang.Object").getMethod("toString", new Class[0]);
@@ -495,7 +496,15 @@ public final class $Proxy0 extends Proxy implements Person
 
   //注意，这里为了节省篇幅，省去了toString，hashCode、equals方法的内容。原理和giveMoney方法一毛一样。
 
+
+/*
+我们的动态代理为啥都得实现 InvacationHandler 就是因为这个 Handler 会持有我们被代理的对象，又因为这个 Proxy$0 的实现，在调用代理对象的对应方法时，因为在静态代码块里面已经拿到我们的对应的类了，因此在调用的时候又把这个方法传递进去，那么我们在 invoke 里面去定义对应的代理前和代理后方法，那么就完成了动态代理，动态就动态在这里，这里通过生成辅助对象，然后根据 InvacationHandler 的 invoke 方法，去传入被代理的方法，完成任意接口的代理，为什么不能代理类，就是因为我们生成的类本省继承了 Proxy 但继承的原因导致我们只能代理接口。
+*/
 }
+
+// 如果要看生成代码的话，可以看 Java 版本的 Proxy 生成，Android 是搞到底层了，Java 还是 Java 在做，具体的，调用 ProxyGenerator.generateProxyClass 去生成对应的类
+ ProxyGenerator gen = new ProxyGenerator(name, interfaces, accessFlags);
+        final byte[] classFile = gen.generateClassFile();
 ```
 
 #### 动态代理总结

@@ -413,7 +413,7 @@ as -> Java 的强转
 out 协变： 这个和Java 的 <? extends T> 语义相同，相当于都是继承于 T 的类型，是 T 的子类型
 in 逆变： 这个和 Java 的 <? super T> 语义相同，限定为是 T 的父类，但是 T 的子类也可以，因为 T 的子类明显是可以转变为 T 的
 
-PCES 原则，out 协变和 in 逆变同样支持 PCES 原则， Producer 生产者需要使用 协变的类型， Consumer 消费者需要使用逆变类型的泛型。
+PCES 原则，out 协变和 in 逆变同样支持 PCES 原则， Producer 生产者需要使用 out 协变的类型， Consumer 消费者需要使用 in 逆变类型的泛型。
 
 **内联函数**
 
