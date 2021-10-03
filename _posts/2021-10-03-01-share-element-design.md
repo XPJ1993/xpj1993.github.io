@@ -121,6 +121,16 @@ boolean enqueueMessage(Message msg, long when) {
 /*
 Hanlder 机制里面 消息的驱动流程为 epoll 阻塞去控制节奏，有几个触发点，一个是咱们 post 或者 sendMsg 的时候去 wakeup 另一个就是咱们 wakeUp 的时候判断 current time 小于 取出来的 msg.when 那么就会调用 native 去阻塞，另外就是 MessageQueue 里面第一时间去拿到 native 的 long 句柄。释放的时候是在 finalize 里面释放句柄的。
 */
+
+Handler() {
+    // 初始化的时候会先拿本身的 Looper 如果线程没有准备过 Looper 就会抛出异常。
+    mLooper = Looper.myLooper();
+        if (mLooper == null) {
+            throw new RuntimeException(
+                "Can't create handler inside thread " + Thread.currentThread()
+                        + " that has not called Looper.prepare()");
+    }
+}
 ```
 
 ### 总结
