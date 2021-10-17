@@ -362,12 +362,8 @@ ARouter.getInstance().build("/wulala/la").navigation()
 | Arouter | 提供各种入口的地方，就是外界的一个接口没啥可说的 |
 | _Arouter | Arouter 幕后英雄，实际上是他在干活 |
 | Postcard | A container that contains the roadmap. <span style="color:#871F78;">每一个具体的导航的信息存储，路线图存放地，这个是核心，最终具体的跳转啥的都是在这里面进行的</span> |
-| PathReplaceService |  重写跳转URL // 实现PathReplaceService接口，并加上一个Path内容任意的注解即可 |
-| LogisticsCenter |  LogisticsCenter contains all of the map.
-1. Creates instance when it is first used.
-2. Handler Multi-Module relationship map(*) 处理多 module 关系图
-3. Complex logic to solve duplicate group definition
-这个类也是个 大佬 啊，这里也提供了 晚上 Postcard 的方法 |
+| PathReplaceService | 重写跳转URL // 实现PathReplaceService接口，并加上一个Path内容任意的注解即可 |
+| LogisticsCenter | LogisticsCenter contains all of the map. 1. Creates instance when it is first used. 2. Handler Multi-Module relationship map(*) 处理多 module 关系图 3. Complex logic to solve duplicate group definition 这个类也是个 大佬 啊，这里也提供了 晚上 Postcard 的方法 |
 | AitoWired | 依赖注入 |
 
 Postcard（明信片，特么的 Android 里面叫 Intent 那我就叫 明星片，反正目的都是为了传递信息。。） navigation 解析：
