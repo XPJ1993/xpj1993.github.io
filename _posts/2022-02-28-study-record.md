@@ -3,7 +3,7 @@ layout: post
 title: 学习记录
 subtitle: 记录一些暂时规模不大的学习记录，如果有必要可以扩展为单独成篇的文章
 image: /img/lifedoc/jijiji.jpg
-tags: [学习]
+tags: [Study]
 ---
 
 ### 0718 学习了新版viewmodel存储数据

@@ -3,7 +3,7 @@ layout: post
 title: 学习计划
 subtitle: 学习计划，主要是列出未来要学习的东西，然后这里更新结果，附上链接
 image: /img/lifedoc/jijiji.jpg
-tags: [学习]
+tags: [Study]
 ---
 
 ### 0711 APT学习计划
