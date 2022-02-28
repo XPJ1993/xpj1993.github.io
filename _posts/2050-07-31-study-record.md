@@ -118,7 +118,7 @@ override fun visitMethodInsn(
 2. 然后具体工作中根据我们自定义的注解作为入口与判断点，去做相应的插入点寻找
 3. <span style="color:#871F78;">核心用法，或者说是以后写ASM的核心点，主要就是需要对ASM TOOL的灵活使用，如果你想插入的语句不知道要怎么写，那么我们就在代码里面写一下然后反编译去看看怎么写，然后写到我们自己插件里，然后泛化就行了</span> 
 4. 元注解的使用，主要是需要自己的目的，知道在什么情境下用什么作用域的注解，例如SOURCE 还是 BINARY 还是 RUNTIME
-5. <span style="color:#871F78;">善用工具，特别是调试工具，</span> 核心用法是 <font size=5>5.1 创建remote config</font> 5.2 执行 ./gradlew clean; ./gradlew assembleDebug -Dorg.gradle.debug=true --no-daemon 首先clean是为了清除生成的文件等，不然如果是增量可能调用不到我们的断点处 5.3 在as内点击debug小图标，有绿色小点证明开始debug，到目标模块后会执行断点了，这时候我们可以看任何信息
+5. <span style="color:#871F78;">善用工具，特别是调试工具，</span> 核心用法是 <font size=4>5.1 创建remote config</font> 5.2 执行 ./gradlew clean; <span style="color:#871F78;"><font size=5>./gradlew assembleDebug -Dorg.gradle.debug=true --no-daemon</font></span> 首先clean是为了清除生成的文件等，不然如果是增量可能调用不到我们的断点处 5.3 在as内点击debug小图标，有绿色小点证明开始debug，到目标模块后会执行断点了，这时候我们可以看任何信息
 
 ![as下remote格式的config](https://raw.githubusercontent.com/Pjex/images/master/20210721112640.png)
 
