@@ -272,7 +272,7 @@ goland中自定义的包无法引入，提示 package **** is not in GOROOT (***
 # 2. 使用 sudo 启动 vpn
 sudo openvpn /etc/openvpn/ipalfish.ovpn
 # 3. 登录密码和用户名为 lpad 账号密码
-xuepanjie12539 / Xpj1d6 
+xpj12539 / Xpj1d6 
 ```
 
 ### 链表反转
